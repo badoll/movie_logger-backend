@@ -2,9 +2,10 @@ package api
 
 // 响应码
 const (
-	Succ  = 0
+	Succ     = 0
 	ParamErr = 10000
-	DBErr = 10001
+	DBErr    = 10001
+	HTTPErr  = 20000
 )
 
 // NilStruct 返回空结构体

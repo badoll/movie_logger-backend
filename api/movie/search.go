@@ -31,9 +31,11 @@ import (
 	}
 */
 type searchReq struct {
-	Title string `json:"title"`
+	Title  string `json:"title"`
+	Limit  int    `json:"limit"`
+	Offset int    `json:"offset"`
 }
-type searchResp struct {
+type movieListResp struct {
 	Total     int     `json:"total"`
 	MovieList []Movie `json:"movie_list"`
 }
@@ -45,7 +47,7 @@ func SearchMovie(c *gin.Context) {
 		c.PureJSON(http.StatusOK, api.NewResp(api.ParamErr, "err", api.NilStruct))
 		return
 	}
-	movieList, err := db.GetCli().GetMovieListByTitle(req.Title)
+	movieList, err := db.GetCli().GetMovieListByTitle(req.Title, req.Limit, req.Offset)
 	if err != nil {
 		logger.GetDefaultLogger().WithFields(logrus.Fields{"api": c.Request.URL, "error": err}).Error()
 		c.PureJSON(http.StatusOK, api.NewResp(api.DBErr, "err", api.NilStruct))
@@ -55,6 +57,6 @@ func SearchMovie(c *gin.Context) {
 	for i, v := range movieList {
 		respList[i] = transMovie(v)
 	}
-	resp := searchResp{Total: len(movieList), MovieList: respList}
+	resp := movieListResp{Total: len(movieList), MovieList: respList}
 	c.PureJSON(http.StatusOK, api.NewResp(api.Succ, "succ", resp))
 }

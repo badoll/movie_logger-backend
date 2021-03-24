@@ -2,12 +2,14 @@ package movie
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/badoll/movie_logger-backend/api"
 	"github.com/badoll/movie_logger-backend/db"
 	"github.com/badoll/movie_logger-backend/logger"
 	"github.com/gin-gonic/gin"
+	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
-	"net/http"
 )
 
 /*
@@ -34,7 +36,7 @@ type cast struct {
 }
 
 type Movie struct {
-	DoubanID    string   `json:"douban_id"`
+	DoubanID    string   `json:"id"`
 	Title       string   `json:"title"`
 	Poster      string   `json:"poster"`
 	Cate        []string `json:"cate"`
@@ -46,7 +48,7 @@ type Movie struct {
 	ReleaseYear string   `json:"release_year"`
 	ReleaseDate []string `json:"release_date"`
 	Runtime     []string `json:"runtime"`
-	RatingScore uint     `json:"rating_score"`
+	RatingScore float64  `json:"rating_score"`
 	RatingNum   uint     `json:"rating_num"`
 	RatingStars []string `json:"rating_stars"`
 	Intro       string   `json:"intro"`
@@ -71,6 +73,8 @@ func transMovie(mdao db.Movie) Movie {
 	if err := json.Unmarshal([]byte(mdao.MainCast), &mainCast); err != nil {
 		logger.GetDefaultLogger().WithField("error", err).Error("ummarshal main_cast error")
 	}
+	// 保留1位小数点精度
+	ratingScore, _ := decimal.NewFromInt(int64(mdao.RatingScore)).Div(decimal.NewFromInt(100)).Round(1).Float64()
 	return Movie{
 		DoubanID:    mdao.DoubanID,
 		Title:       mdao.Title,
@@ -84,7 +88,7 @@ func transMovie(mdao db.Movie) Movie {
 		ReleaseYear: mdao.ReleaseYear,
 		ReleaseDate: db.SplitString(mdao.ReleaseDate),
 		Runtime:     db.SplitString(mdao.Runtime),
-		RatingScore: mdao.RatingScore,
+		RatingScore: ratingScore,
 		RatingNum:   mdao.RatingNum,
 		RatingStars: db.SplitString(mdao.RatingStars),
 		Intro:       mdao.Intro,

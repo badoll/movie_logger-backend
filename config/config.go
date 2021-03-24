@@ -28,6 +28,11 @@ type Config struct {
 		Database string `toml:"Database"`
 		Charset  string `toml:"Charset"`
 	} `toml:"DBConf"`
+
+	WXConf struct {
+		AppID  string `toml:"AppID"`
+		Secret string `toml:"Secret"`
+	} `toml:"WXConf"`
 }
 
 func GetConfig() Config {
