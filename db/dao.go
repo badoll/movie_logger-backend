@@ -4,7 +4,7 @@ import "strings"
 
 // Movie DB raw data
 type Movie struct {
-	DoubanID    string `db:"douban_id"`
+	MovieID     int64  `db:"id"`
 	Title       string `db:"title"`
 	Poster      string `db:"poster"`
 	Cate        string `db:"cate"`

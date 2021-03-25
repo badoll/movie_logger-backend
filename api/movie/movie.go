@@ -3,6 +3,7 @@ package movie
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/badoll/movie_logger-backend/api"
 	"github.com/badoll/movie_logger-backend/db"
@@ -36,7 +37,7 @@ type cast struct {
 }
 
 type Movie struct {
-	DoubanID    string   `json:"id"`
+	MovieID     int64    `json:"id"`
 	Title       string   `json:"title"`
 	Poster      string   `json:"poster"`
 	Cate        []string `json:"cate"`
@@ -57,8 +58,8 @@ type Movie struct {
 }
 
 func GetMovieDetail(c *gin.Context) {
-	doubanID := c.Param("douban_id")
-	movie, err := db.GetCli().GetMovieDetailByDoubanID(doubanID)
+	movieID, _ := strconv.ParseInt(c.Param("movie_id"), 10, 64)
+	movie, err := db.GetCli().GetMovieDetailByMovieID(movieID)
 	if err != nil {
 		logger.GetDefaultLogger().WithFields(logrus.Fields{"api": c.Request.URL, "error": err}).Error()
 		c.PureJSON(http.StatusOK, api.NewResp(api.DBErr, "err", api.NilStruct))
@@ -76,7 +77,7 @@ func transMovie(mdao db.Movie) Movie {
 	// 保留1位小数点精度
 	ratingScore, _ := decimal.NewFromInt(int64(mdao.RatingScore)).Div(decimal.NewFromInt(100)).Round(1).Float64()
 	return Movie{
-		DoubanID:    mdao.DoubanID,
+		MovieID:     mdao.MovieID,
 		Title:       mdao.Title,
 		Poster:      mdao.Poster,
 		Cate:        db.SplitString(mdao.Cate),

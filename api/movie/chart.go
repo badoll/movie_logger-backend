@@ -13,24 +13,16 @@ import (
 
 func GetMovieListByChart(c *gin.Context) {
 	chart := c.Param("chart")
-	limit := c.Query("limit")
-	offset := c.Query("offset")
+	limit, _ := strconv.Atoi(c.Query("limit"))
+	offset, _ := strconv.Atoi(c.Query("offset"))
 	var movieList []db.Movie
 	var err error
 	switch chart {
 	case "nowplaying":
 		fallthrough
 	case "upcoming":
-		/*
-			目前只有nowplaying和upcoming有分页的需求
-		*/
-		if checkIntParam(limit) && checkIntParam(offset) {
-			l, _ := strconv.Atoi(limit)
-			o, _ := strconv.Atoi(offset)
-			movieList, err = db.GetCli().GetMovieListByChartWithPage(chart, l, o)
-		} else {
-			movieList, err = db.GetCli().GetMovieListByChart(chart)
-		}
+		//目前只有nowplaying和upcoming需要分页
+		movieList, err = db.GetCli().GetMovieListByChartWithPage(chart, limit, offset)
 	case "newrelease":
 		fallthrough
 	case "weeklytop":
@@ -53,14 +45,4 @@ func GetMovieListByChart(c *gin.Context) {
 		MovieList: respList,
 	}
 	c.PureJSON(http.StatusOK, api.NewResp(api.Succ, "succ", resp))
-}
-
-func checkIntParam(param string) bool {
-	if len(param) == 0 {
-		return false
-	}
-	if _, err := strconv.Atoi(param); err != nil {
-		return false
-	}
-	return true
 }

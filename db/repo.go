@@ -1,16 +1,20 @@
 package db
 
-import "fmt"
+import (
+	"fmt"
+)
 
-var movie_col = "m.douban_id,m.title,m.poster,m.cate,m.director," +
+/**************************************Movie*************************************************/
+
+var movie_col = "m.id,m.title,m.poster,m.cate,m.director," +
 	"m.writer,m.performer,m.region,m.language,m.release_year," +
 	"m.release_date,m.runtime,m.rating_score,m.rating_num," +
 	"m.rating_stars,m.intro,m.main_cast,m.photos"
 
-func (db *DB) GetMovieDetailByDoubanID(doubanID string) (Movie, error) {
+func (db *DB) GetMovieDetailByMovieID(movieID int64) (Movie, error) {
 	movie := Movie{}
-	sql := "select " + movie_col + " from movie m where m.douban_id = ? limit 1"
-	err := db.Get(&movie, sql, doubanID)
+	sql := "select " + movie_col + " from movie m where m.id = ? limit 1"
+	err := db.Get(&movie, sql, movieID)
 	return movie, err
 }
 
@@ -40,19 +44,17 @@ func (db *DB) GetMovieListByChartWithPage(chart string, limit, offset int) (mlis
 }
 
 // GetRecommendNumByUser 推荐池里可推荐的电影总数
-func (db *DB) GetRecommendNumByUser(userID string) (total int, err error) {
+func (db *DB) GetRecommendNumByUser(userID int64) (total int, err error) {
 	sql := "select count(*) from recommend rc join movie m on rc.movie_id = m.id " +
 		"and rc.user_id = ? and rc.has_recom = 0"
 	err = db.Get(&total, sql, userID)
 	return
 }
 
-// GetRecommendByUser 根据用户open_id拿到推荐的电影list
-func (db *DB) GetRecommendByUser(userID string) (mlist []Movie, err error) {
+// GetRecommendByUser 根据用户id拿到推荐的电影list
+func (db *DB) GetRecommendByUser(userID int64) (mlist []Movie, err error) {
 	// TODO 先返回10个高分电影
-	sql := "select " + movie_col + " from movie m order by rating_score desc limit 10"
-	err = db.Select(&mlist, sql)
-	return
+	return db.GetTopMovieWithPage(10, 0)
 	// sql := "select " + movie_col + " from recommend rc join movie m on rc.movie_id = m.id " +
 	// 	"and rc.user_id = ? and rc.has_recom = 0"
 	// err = db.Select(&mlist, sql, userID)
@@ -60,9 +62,89 @@ func (db *DB) GetRecommendByUser(userID string) (mlist []Movie, err error) {
 }
 
 // GetRecommendByMovie 电影相关推荐
-func (db *DB) GetRecommendByMovie(doubanID string) (mlist []Movie, err error) {
+func (db *DB) GetRecommendByMovie(movieID int64) (mlist []Movie, err error) {
 	// TODO 先返回10个高分电影
-	sql := "select " + movie_col + " from movie m order by rating_score desc limit 10"
-	err = db.Select(&mlist, sql)
+	return db.GetTopMovieWithPage(10, 0)
+}
+
+// GetTopMovieByPage 高分电影 分页
+func (db *DB) GetTopMovieWithPage(limit, offset int) (mlist []Movie, err error) {
+	sql := "select " + movie_col + " from movie m order by m.rating_score desc limit ? offset ?"
+	err = db.Select(&mlist, sql, limit, offset)
+	return
+}
+
+/**************************************User**************************************************/
+
+// GetUserID 根据open_id获取user主键id，若无此用户则创建
+func (db *DB) GetUserID(openID string) (userID int64, err error) {
+	tx, err := db.Beginx()
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		} else {
+			tx.Commit()
+		}
+	}()
+	id := make([]int64, 0)
+	sql := "select id from user where open_id = ?"
+	err = tx.Select(&id, sql, openID)
+	if err != nil {
+		return
+	}
+	if len(id) > 0 {
+		return id[0], nil
+	}
+	// 没有则创建
+	sql = "insert into user (open_id) values (?)"
+	result, err := tx.Exec(sql, openID)
+	if err != nil {
+		return
+	}
+	userID, err = result.LastInsertId()
+	return
+}
+
+// IsNewUser 判断是否是新用户（没有选择兴趣类型）
+func (db *DB) IsNewUser(userID int64) (isNew bool, err error) {
+	isNew = true
+	sql := "select count(*) from user where id = ? and length(inter_field) != 0"
+	cnt := 0
+	err = db.Get(&cnt, sql, userID)
+	if err != nil {
+		return
+	}
+	if cnt > 0 {
+		isNew = false
+	}
+	return
+}
+
+// SetUserInterField 设置用户感兴趣的电影类型
+func (db *DB) SetUserInterField(userID int64, interField string) error {
+	sql := "insert into user (id, inter_field) values (?,?) on duplicate key update " +
+		"inter_field = values(inter_field)"
+	_, err := db.Exec(sql, userID, interField)
+	return err
+}
+
+// LikeMovie 设置用户喜欢或不喜欢
+func (db *DB) LikeMovie(userID, movieID int64, likeStatus bool) error {
+	like := 0
+	if likeStatus {
+		like = 1
+	}
+	sql := "insert into user_collect (user_id, movie_id, likes) values (?, ?, ?) " +
+		"on duplicate key update likes = values(likes)"
+	_, err := db.Exec(sql, userID, movieID, like)
+	return err
+}
+
+func (db *DB) GetUserLikeList(userID int64) (ids []int64, err error) {
+	sql := "select movie_id from user_collect where user_id = ? and likes = 1"
+	err = db.Select(&ids, sql, userID)
 	return
 }
