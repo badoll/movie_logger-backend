@@ -24,6 +24,19 @@ type Movie struct {
 	Photos      string `db:"photos"`
 }
 
+type MovieIndex struct {
+	MovieID     int64  `db:"id"`
+	Title       string `db:"title"`
+	Cate        string `db:"cate"`
+	Director    string `db:"director"`
+	Writer      string `db:"writer"`
+	Performer   string `db:"performer"`
+	Region      string `db:"region"`
+	Language    string `db:"language"`
+	ReleaseYear string `db:"release_year"`
+	RatingScore uint   `db:"rating_score"`
+}
+
 // SplitString 分隔以','为分隔符的string数据
 func SplitString(data string) []string {
 	if len(data) == 0 {

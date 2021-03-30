@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/badoll/movie_logger-backend/api"
+	"github.com/badoll/movie_logger-backend/api/es"
 	"github.com/badoll/movie_logger-backend/db"
 	"github.com/badoll/movie_logger-backend/logger"
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,10 @@ import (
 	req:
 	{
 		"title":"xxx",
+		"filter": {
+			"cate": ["xx","xx"],
+			"performer": ["xx","xx"]
+		}
 	}
 */
 
@@ -31,9 +36,10 @@ import (
 	}
 */
 type searchReq struct {
-	Title  string `json:"title"`
-	Limit  int    `json:"limit"`
-	Offset int    `json:"offset"`
+	Title  string                   `json:"title"`
+	Filter map[string][]interface{} `json:"filter"`
+	Limit  int                      `json:"limit"`
+	Offset int                      `json:"offset"`
 }
 type movieListResp struct {
 	Total     int     `json:"total"`
@@ -47,7 +53,14 @@ func SearchMovie(c *gin.Context) {
 		c.PureJSON(http.StatusOK, api.NewResp(api.ParamErr, "err", api.NilStruct))
 		return
 	}
-	movieList, err := db.GetCli().GetMovieListByTitle(req.Title, req.Limit, req.Offset)
+	// 通过es索引拉取movie id
+	movieIDList, err := es.Search(req.Title, req.Filter, req.Limit, req.Offset)
+	if err != nil {
+		logger.GetDefaultLogger().WithFields(logrus.Fields{"api": c.Request.URL, "error": err}).Error()
+		c.PureJSON(http.StatusOK, api.NewResp(api.SvrErr, "err", api.NilStruct))
+		return
+	}
+	movieList, err := db.GetCli().SelectMovieDetailByMovieIDList(movieIDList)
 	if err != nil {
 		logger.GetDefaultLogger().WithFields(logrus.Fields{"api": c.Request.URL, "error": err}).Error()
 		c.PureJSON(http.StatusOK, api.NewResp(api.DBErr, "err", api.NilStruct))

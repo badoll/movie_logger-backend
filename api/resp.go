@@ -5,6 +5,7 @@ const (
 	Succ     = 0
 	ParamErr = 10000
 	DBErr    = 10001
+	SvrErr   = 10002
 	HTTPErr  = 20000
 )
 

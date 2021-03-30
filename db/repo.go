@@ -2,6 +2,8 @@ package db
 
 import (
 	"fmt"
+
+	"github.com/jmoiron/sqlx"
 )
 
 /**************************************Movie*************************************************/
@@ -11,11 +13,39 @@ var movie_col = "m.id,m.title,m.poster,m.cate,m.director," +
 	"m.release_date,m.runtime,m.rating_score,m.rating_num," +
 	"m.rating_stars,m.intro,m.main_cast,m.photos"
 
+var movie_index_col = "m.id,m.title,m.cate,m.director," +
+	"m.writer,m.performer,m.region,m.language,m.release_year," +
+	"m.rating_score"
+
 func (db *DB) GetMovieDetailByMovieID(movieID int64) (Movie, error) {
 	movie := Movie{}
 	sql := "select " + movie_col + " from movie m where m.id = ? limit 1"
 	err := db.Get(&movie, sql, movieID)
 	return movie, err
+}
+
+func (db *DB) SelectMovieDetailByMovieIDList(movieIDs []int64) (mlist []Movie, err error) {
+	sql := "select " + movie_col + " from movie m where m.id in (?)"
+	query, args, err := sqlx.In(sql, movieIDs)
+	if err != nil {
+		return
+	}
+	rawList := []Movie{}
+	err = db.Select(&rawList, query, args...)
+	if err != nil {
+		return
+	}
+	// 按movieIDs中顺序排序
+	m := map[int64]Movie{}
+	for _, v := range rawList {
+		m[v.MovieID] = v
+	}
+	for _, id := range movieIDs {
+		if movie, ok := m[id]; ok {
+			mlist = append(mlist, movie)
+		}
+	}
+	return
 }
 
 // GetMovieListByTitle
@@ -28,7 +58,7 @@ func (db *DB) GetMovieListByTitle(title string, limit, offset int) (mlist []Movi
 
 }
 
-// GetMovieListBychart 排行榜电影id联表查电影详情
+// GetMovieListByChart 排行榜电影id联表查电影详情
 func (db *DB) GetMovieListByChart(chart string) (mlist []Movie, err error) {
 	sql := fmt.Sprintf("select "+movie_col+" from %s as c join movie as m on c.douban_id = m.douban_id", chart)
 	err = db.Select(&mlist, sql)
@@ -71,6 +101,18 @@ func (db *DB) GetRecommendByMovie(movieID int64) (mlist []Movie, err error) {
 func (db *DB) GetTopMovieWithPage(limit, offset int) (mlist []Movie, err error) {
 	sql := "select " + movie_col + " from movie m order by m.rating_score desc limit ? offset ?"
 	err = db.Select(&mlist, sql, limit, offset)
+	return
+}
+
+func (db *DB) GetMovieIndexData(limit, offset int) (mlist []MovieIndex, err error) {
+	sql := "select " + movie_index_col + " from movie m order by m.id limit ? offset ?"
+	err = db.Select(&mlist, sql, limit, offset)
+	return
+}
+
+func (db *DB) GetMovieCount() (cnt int, err error) {
+	sql := "select count(*) from movie"
+	err = db.Get(&cnt, sql)
 	return
 }
 

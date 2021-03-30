@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/badoll/movie_logger-backend/api/es"
 	"github.com/badoll/movie_logger-backend/api/movie"
 	"github.com/badoll/movie_logger-backend/api/user"
 	"github.com/badoll/movie_logger-backend/db"
@@ -24,7 +25,11 @@ func initRouter(router *gin.Engine) {
 
 	v.POST("/user/action/like", user.LikeMovie)
 	v.POST("/user/action/set_inter_field", user.SetUserInterField)
-	
+
+	// es接口
+	v.GET("/es/state", es.GetState)
+	v.GET("/es/reload", es.Reload)
+
 	v.GET("/test/:test_id", user.GetTest)
 }
 
