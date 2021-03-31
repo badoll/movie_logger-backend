@@ -105,8 +105,8 @@ func (db *DB) GetMovieCount() (cnt int, err error) {
 
 /**************************************User**************************************************/
 
-// GetUserID 根据open_id获取user主键id，若无此用户则创建
-func (db *DB) GetUserID(openID string) (userID int64, err error) {
+// GetUserInfo 根据open_id获取user主键id，若无此用户则创建
+func (db *DB) GetUserInfo(openID string) (user User, err error) {
 	tx, err := db.Beginx()
 	if err != nil {
 		return
@@ -118,14 +118,14 @@ func (db *DB) GetUserID(openID string) (userID int64, err error) {
 			tx.Commit()
 		}
 	}()
-	id := make([]int64, 0)
-	sql := "select id from user where open_id = ?"
-	err = tx.Select(&id, sql, openID)
+	u := make([]User, 0)
+	sql := "select id, nick_name, avatar_url from user where open_id = ?"
+	err = tx.Select(&u, sql, openID)
 	if err != nil {
 		return
 	}
-	if len(id) > 0 {
-		return id[0], nil
+	if len(u) > 0 {
+		return u[0], nil
 	}
 	// 没有则创建
 	sql = "insert into user (open_id) values (?)"
@@ -133,7 +133,8 @@ func (db *DB) GetUserID(openID string) (userID int64, err error) {
 	if err != nil {
 		return
 	}
-	userID, err = result.LastInsertId()
+	userID, err := result.LastInsertId()
+	user.ID = userID
 	return
 }
 
@@ -201,7 +202,7 @@ func (db *DB) UpdateUserInter(userID int64, userInter UserInter) error {
 	return err
 }
 
-func (db *DB) UpdateUserInfo(userID int64, userInfo UserInfo) error {
+func (db *DB) UpdateUserInfo(userID int64, userInfo User) error {
 	sql := "update user set nick_name = ?, avatar_url = ? where id = ?"
 	_, err := db.Exec(sql, userInfo.NickName, userInfo.AvatarUrl, userID)
 	return err

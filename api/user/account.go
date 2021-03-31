@@ -28,8 +28,10 @@ type wxResp struct {
 }
 
 type loginResp struct {
-	UserID   int64   `json:"user_id"`
-	LikeList []int64 `json:"like_list"`
+	UserID    int64   `json:"user_id"`
+	LikeList  []int64 `json:"like_list"`
+	NickName  string  `json:"nick_name,omitempty"`
+	AvatarUrl string  `json:"avatar_url,omitempty"`
 }
 
 // 接口：https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/login/auth.code2Session.html
@@ -60,13 +62,13 @@ func Login(c *gin.Context) {
 		c.PureJSON(http.StatusOK, api.NewResp(api.HTTPErr, "err", wxResp))
 		return
 	}
-	userID, err := db.GetCli().GetUserID(wxResp.OpenID)
+	userInfo, err := db.GetCli().GetUserInfo(wxResp.OpenID)
 	if err != nil {
 		logger.GetDefaultLogger().WithFields(logrus.Fields{"api": url, "error": err, "resp": wxResp}).Error("GetUserID error")
 		c.PureJSON(http.StatusOK, api.NewResp(api.DBErr, "err", api.NilStruct))
 		return
 	}
-	likeList, err := db.GetCli().GetUserLikeList(userID)
+	likeList, err := db.GetCli().GetUserLikeList(userInfo.ID)
 	if err != nil {
 		logger.GetDefaultLogger().WithFields(logrus.Fields{"api": url, "error": err, "resp": wxResp}).Error("GetUserID error")
 		c.PureJSON(http.StatusOK, api.NewResp(api.DBErr, "err", api.NilStruct))
@@ -77,8 +79,10 @@ func Login(c *gin.Context) {
 		likeList = make([]int64, 0)
 	}
 	resp := loginResp{
-		UserID:   userID,
-		LikeList: likeList,
+		UserID:    userInfo.ID,
+		LikeList:  likeList,
+		NickName:  userInfo.NickName,
+		AvatarUrl: userInfo.AvatarUrl,
 	}
 	c.PureJSON(http.StatusOK, api.NewResp(api.Succ, "succ", resp))
 }
@@ -97,7 +101,7 @@ func UpdateUserInfo(c *gin.Context) {
 		c.PureJSON(http.StatusOK, api.NewResp(api.ParamErr, "err", api.NilStruct))
 		return
 	}
-	userInfo := db.UserInfo{
+	userInfo := db.User{
 		NickName:  req.NickName,
 		AvatarUrl: req.AvatarUrl,
 	}

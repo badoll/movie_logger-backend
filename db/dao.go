@@ -37,7 +37,8 @@ type MovieIndex struct {
 	RatingScore uint   `db:"rating_score"`
 }
 
-type UserInfo struct {
+type User struct {
+	ID        int64  `db:"id"`
 	NickName  string `db:"nick_name"`
 	AvatarUrl string `db:"avatar_url"`
 }
