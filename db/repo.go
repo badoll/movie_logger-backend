@@ -185,10 +185,16 @@ func (db *DB) GetUesrInter(userID int64) (userInter UserInter, err error) {
 	return
 }
 
-func (db *DB) SetUserInter(userID int64, userInter UserInter) error {
+func (db *DB) UpdateUserInter(userID int64, userInter UserInter) error {
 	sql := "update user set inter_field = ?, inter_director = ?, inter_writer = ?, inter_performer = ? " +
 		"where id = ?"
 	_, err := db.Exec(sql, userInter.InterField, userInter.InterDirector, userInter.InterWriter,
 		userInter.InterPerformer, userID)
+	return err
+}
+
+func (db *DB) UpdateUserInfo(userID int64, userInfo UserInfo) error {
+	sql := "update user set nick_name = ?, avatar_url = ? where id = ?"
+	_, err := db.Exec(sql, userInfo.NickName, userInfo.AvatarUrl, userID)
 	return err
 }

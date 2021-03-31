@@ -83,6 +83,32 @@ func Login(c *gin.Context) {
 	c.PureJSON(http.StatusOK, api.NewResp(api.Succ, "succ", resp))
 }
 
+type updateReq struct {
+	NickName  string `json:"nick_name"`
+	AvatarUrl string `json:"avatar_url"`
+}
+
+// UpdateUserInfo 更新用户数据
+func UpdateUserInfo(c *gin.Context) {
+	userID, _ := strconv.ParseInt(c.Param("user_id"), 10, 64)
+	req := updateReq{}
+	if err := c.BindJSON(&req); err != nil {
+		logger.GetDefaultLogger().WithFields(logrus.Fields{"api": c.Request.URL, "error": err}).Error()
+		c.PureJSON(http.StatusOK, api.NewResp(api.ParamErr, "err", api.NilStruct))
+		return
+	}
+	userInfo := db.UserInfo{
+		NickName:  req.NickName,
+		AvatarUrl: req.AvatarUrl,
+	}
+	if err := db.GetCli().UpdateUserInfo(userID, userInfo); err != nil {
+		logger.GetDefaultLogger().WithFields(logrus.Fields{"api": c.Request.URL, "error": err}).Error()
+		c.PureJSON(http.StatusOK, api.NewResp(api.DBErr, "err", api.NilStruct))
+		return
+	}
+	c.PureJSON(http.StatusOK, api.NewResp(api.Succ, "succ", api.NilStruct))
+}
+
 // IsNewUser 判断是否是新用户（没有选择兴趣类型）
 func IsNewUser(c *gin.Context) {
 	userID, _ := strconv.ParseInt(c.Param("user_id"), 10, 64)

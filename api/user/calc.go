@@ -51,7 +51,9 @@ func (c *calBot) Cal() {
 		i++
 	}
 	c.mu.RUnlock()
+	logger.GetLogger("cal").WithFields(logrus.Fields{"api": "Cal"}).Debug("start to cal")
 	CalUserInter(userList)
+	logger.GetLogger("cal").WithFields(logrus.Fields{"api": "Cal"}).Debug("done")
 }
 
 // CalUserInter 通过用户喜欢的电影列表提取电影推荐因素中占比最大的几个值
@@ -62,7 +64,7 @@ func CalUserInter(userList []int64) {
 	for _, userID := range userList {
 		likeList, err := db.GetCli().GetUserLikeList(userID)
 		if err != nil {
-			logger.GetDefaultLogger().WithFields(logrus.Fields{"api": "CalUserInter", "error": err}).Error()
+			logger.GetLogger("cal").WithFields(logrus.Fields{"api": "CalUserInter", "error": err}).Error()
 			return
 		}
 		if len(likeList) == 0 {
@@ -70,7 +72,7 @@ func CalUserInter(userList []int64) {
 		}
 		daoList, err := db.GetCli().SelectMovieDetailByMovieIDList(likeList)
 		if err != nil {
-			logger.GetDefaultLogger().WithFields(logrus.Fields{"api": "CalUserInter", "error": err}).Error()
+			logger.GetLogger("cal").WithFields(logrus.Fields{"api": "CalUserInter", "error": err}).Error()
 			return
 		}
 		mlist := make([]movie.Movie, len(daoList))
@@ -100,7 +102,7 @@ func CalUserInter(userList []int64) {
 		}
 		userInter, err := db.GetCli().GetUesrInter(userID)
 		if err != nil {
-			logger.GetDefaultLogger().WithFields(logrus.Fields{"api": "CalUserInter", "error": err}).Error()
+			logger.GetLogger("cal").WithFields(logrus.Fields{"api": "CalUserInter", "error": err}).Error()
 			return
 		}
 		// 更新用户兴趣
@@ -116,8 +118,8 @@ func CalUserInter(userList []int64) {
 			InterWriter:    strings.Join(rf.Writer, ","),
 			InterPerformer: strings.Join(rf.Performer, ","),
 		}
-		if err = db.GetCli().SetUserInter(userID, daoRF); err != nil {
-			logger.GetDefaultLogger().WithFields(logrus.Fields{"api": "CalUserInter", "error": err}).Error()
+		if err = db.GetCli().UpdateUserInter(userID, daoRF); err != nil {
+			logger.GetLogger("cal").WithFields(logrus.Fields{"api": "CalUserInter", "error": err}).Error()
 			return
 		}
 	}

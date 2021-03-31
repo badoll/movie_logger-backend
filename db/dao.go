@@ -37,6 +37,11 @@ type MovieIndex struct {
 	RatingScore uint   `db:"rating_score"`
 }
 
+type UserInfo struct {
+	NickName  string `db:"nick_name"`
+	AvatarUrl string `db:"avatar_url"`
+}
+
 type UserInter struct {
 	InterField     string `db:"inter_field"` //感兴趣的电影类型
 	InterDirector  string `db:"inter_director"`
