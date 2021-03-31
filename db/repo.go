@@ -172,9 +172,17 @@ func (db *DB) LikeMovie(userID, movieID int64, likeStatus bool) error {
 	return err
 }
 
+// GetUserLikeList 用户喜欢的电影，按点赞时间排序
 func (db *DB) GetUserLikeList(userID int64) (ids []int64, err error) {
-	sql := "select movie_id from user_collect where user_id = ? and likes = 1"
+	sql := "select movie_id from user_collect where user_id = ? and likes = 1 order by update_time desc"
 	err = db.Select(&ids, sql, userID)
+	return
+}
+
+// GetUserLikeListWithPage 用户喜欢的电影，按点赞时间排序(分页)
+func (db *DB) GetUserLikeListWithPage(userID int64, limit, offset int) (ids []int64, err error) {
+	sql := "select movie_id from user_collect where user_id = ? and likes = 1 order by update_time desc limit ? offset ?"
+	err = db.Select(&ids, sql, userID, limit, offset)
 	return
 }
 
