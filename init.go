@@ -23,6 +23,7 @@ func initRouter(router *gin.Engine) {
 	// 用户相关接口
 	v.GET("/user/account/login/:code", user.Login)
 	v.GET("/user/account/is_new/:user_id", user.IsNewUser)
+	v.POST("/user/account/update/:user_id", user.UpdateUserInfo)
 
 	v.POST("/user/action/like", user.LikeMovie)
 	v.POST("/user/action/set_inter_field", user.SetUserInterField)
