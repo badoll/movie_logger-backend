@@ -30,8 +30,8 @@ type wxResp struct {
 type loginResp struct {
 	UserID    int64   `json:"user_id"`
 	LikeList  []int64 `json:"like_list"`
-	NickName  string  `json:"nick_name,omitempty"`
-	AvatarUrl string  `json:"avatar_url,omitempty"`
+	NickName  string  `json:"nick_name"`
+	AvatarUrl string  `json:"avatar_url"`
 }
 
 // 接口：https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/login/auth.code2Session.html
