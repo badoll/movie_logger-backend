@@ -14,7 +14,7 @@ import (
 
 const (
 	// 用户喜欢的电影列表中某一个tag出现的次数占比超过该比率则加入用户感兴趣的tag
-	RATE2RECOMMEND float32 = 0.5
+	RATE2RECOMMEND float32 = 0.35
 )
 
 var c = &calBot{userList: map[int64]struct{}{}}
