@@ -14,6 +14,7 @@ func initRouter(router *gin.Engine) {
 	// 电影相关接口
 	v.GET("/movie/id/:movie_id", movie.GetMovieDetail)
 	v.GET("/movie/chart/:chart", movie.GetMovieListByChart)
+	v.GET("/movie/user/like/:user_id", movie.Like)
 	v.GET("/movie/recommend/user/:user_id", movie.GetRecommendByUser)
 	v.GET("/movie/recommend/movie/:movie_id", movie.GetRecommendByMovie)
 	v.GET("/movie/recommend/default", movie.GetRecommendDefault)
