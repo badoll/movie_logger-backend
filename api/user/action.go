@@ -29,6 +29,8 @@ func LikeMovie(c *gin.Context) {
 		c.PureJSON(http.StatusOK, api.NewResp(api.DBErr, "err", api.NilStruct))
 		return
 	}
+	// 用户点赞电影后异步更新用户电影推荐因素(导演/编剧/演员/电影类型)
+	AddCalUser(req.UserID)
 	c.PureJSON(http.StatusOK, api.NewResp(api.Succ, "succ", api.NilStruct))
 }
 

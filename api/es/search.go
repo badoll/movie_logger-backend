@@ -9,6 +9,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	// 默认传入的should条件要匹配40%, 四舍五入
+	MINSHOULDMATCH = "40%"
+)
+
 type searchBody struct {
 	Sort  []map[string]interface{} `json:"sort,omitempty"`
 	From  *int                     `json:"from,omitempty"`
@@ -29,8 +34,10 @@ type boolQuery struct {
 }
 
 type boolCond struct {
-	Must   []mustCond   `json:"must,omitempty"`
-	Filter []filterCond `json:"filter,omitempty"`
+	Must           []mustCond   `json:"must,omitempty"`
+	Filter         []filterCond `json:"filter,omitempty"`
+	Should         []filterCond `json:"should,omitempty"`
+	MinShouldMatch string       `json:"minimum_should_match,omitempty"` //should条件中匹配的最小百分比 eg: 40%
 }
 
 type mustCond struct {
@@ -64,6 +71,10 @@ type hitItem struct {
 // limit/offset (required)
 // Search 用于搜索页，搜索标题并过滤电影类型/演员/导演/编剧
 func Search(title string, filter map[string][]interface{}, limit, offset int) (idList []int64, err error) {
+	// 没有传标题则只过滤
+	if len(title) == 0 {
+		return Filter(filter, limit, offset)
+	}
 	reqBody := searchBody{
 		// 排序优先级：标题相似度得分 > 电影评分
 		Sort: []map[string]interface{}{
@@ -97,6 +108,25 @@ func Filter(filter map[string][]interface{}, limit, offset int) (idList []int64,
 		Query: boolQuery{
 			Bool: boolCond{
 				Filter: getFilterConds(filter),
+			},
+		},
+	}
+	return getSearchResp(reqBody)
+}
+
+// RelativeFilter 使用should语句检索相关电影
+func RelativeFilter(should map[string][]interface{}, limit, offset int) (idList []int64, err error) {
+	reqBody := searchBody{
+		// filter context 没有_score, 用电影评分排序
+		Sort: []map[string]interface{}{
+			{"rating_score": "desc"},
+		},
+		From: &offset,
+		Size: &limit,
+		Query: boolQuery{
+			Bool: boolCond{
+				Should:         getFilterConds(should),
+				MinShouldMatch: MINSHOULDMATCH, //默认传入的should条件要匹配40%, 四舍五入
 			},
 		},
 	}
@@ -145,6 +175,6 @@ func getSearchResp(reqBody searchBody) (idList []int64, err error) {
 		}
 		idList = append(idList, id)
 	}
-	logger.GetLogger("eslog").WithFields(logrus.Fields{"api": "_search", "req": reqBody, "resp": resp}).Debug()
+	logger.GetLogger("eslog").WithFields(logrus.Fields{"api": "_search", "req": string(jsonB), "resp": string(respBody)}).Debug()
 	return
 }

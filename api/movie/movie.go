@@ -65,11 +65,11 @@ func GetMovieDetail(c *gin.Context) {
 		c.PureJSON(http.StatusOK, api.NewResp(api.DBErr, "err", api.NilStruct))
 		return
 	}
-	c.PureJSON(http.StatusOK, api.NewResp(api.Succ, "succ", transMovie(movie)))
+	c.PureJSON(http.StatusOK, api.NewResp(api.Succ, "succ", TransMovie(movie)))
 }
 
-// transMovie 转换dao数据类型
-func transMovie(mdao db.Movie) Movie {
+// TransMovie 转换dao数据类型
+func TransMovie(mdao db.Movie) Movie {
 	mainCast := make([]cast, 0)
 	if err := json.Unmarshal([]byte(mdao.MainCast), &mainCast); err != nil {
 		logger.GetDefaultLogger().WithField("error", err).Error("ummarshal main_cast error")

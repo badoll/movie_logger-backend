@@ -68,7 +68,7 @@ func SearchMovie(c *gin.Context) {
 	}
 	respList := make([]Movie, len(movieList))
 	for i, v := range movieList {
-		respList[i] = transMovie(v)
+		respList[i] = TransMovie(v)
 	}
 	resp := movieListResp{Total: len(movieList), MovieList: respList}
 	c.PureJSON(http.StatusOK, api.NewResp(api.Succ, "succ", resp))

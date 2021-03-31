@@ -25,6 +25,9 @@ func (db *DB) GetMovieDetailByMovieID(movieID int64) (Movie, error) {
 }
 
 func (db *DB) SelectMovieDetailByMovieIDList(movieIDs []int64) (mlist []Movie, err error) {
+	if len(movieIDs) == 0 {
+		return
+	}
 	sql := "select " + movie_col + " from movie m where m.id in (?)"
 	query, args, err := sqlx.In(sql, movieIDs)
 	if err != nil {
@@ -79,22 +82,6 @@ func (db *DB) GetRecommendNumByUser(userID int64) (total int, err error) {
 		"and rc.user_id = ? and rc.has_recom = 0"
 	err = db.Get(&total, sql, userID)
 	return
-}
-
-// GetRecommendByUser 根据用户id拿到推荐的电影list
-func (db *DB) GetRecommendByUser(userID int64) (mlist []Movie, err error) {
-	// TODO 先返回10个高分电影
-	return db.GetTopMovieWithPage(10, 0)
-	// sql := "select " + movie_col + " from recommend rc join movie m on rc.movie_id = m.id " +
-	// 	"and rc.user_id = ? and rc.has_recom = 0"
-	// err = db.Select(&mlist, sql, userID)
-	// return
-}
-
-// GetRecommendByMovie 电影相关推荐
-func (db *DB) GetRecommendByMovie(movieID int64) (mlist []Movie, err error) {
-	// TODO 先返回10个高分电影
-	return db.GetTopMovieWithPage(10, 0)
 }
 
 // GetTopMovieByPage 高分电影 分页
@@ -189,4 +176,19 @@ func (db *DB) GetUserLikeList(userID int64) (ids []int64, err error) {
 	sql := "select movie_id from user_collect where user_id = ? and likes = 1"
 	err = db.Select(&ids, sql, userID)
 	return
+}
+
+// GetUesrInter 获取用户兴趣
+func (db *DB) GetUesrInter(userID int64) (userInter UserInter, err error) {
+	sql := "select inter_field, inter_director, inter_writer, inter_performer from user where id = ?"
+	err = db.Get(&userInter, sql, userID)
+	return
+}
+
+func (db *DB) SetUserInter(userID int64, userInter UserInter) error {
+	sql := "update user set inter_field = ?, inter_director = ?, inter_writer = ?, inter_performer = ? " +
+		"where id = ?"
+	_, err := db.Exec(sql, userInter.InterField, userInter.InterDirector, userInter.InterWriter,
+		userInter.InterPerformer, userID)
+	return err
 }

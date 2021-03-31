@@ -37,13 +37,17 @@ type MovieIndex struct {
 	RatingScore uint   `db:"rating_score"`
 }
 
+type UserInter struct {
+	InterField     string `db:"inter_field"` //感兴趣的电影类型
+	InterDirector  string `db:"inter_director"`
+	InterWriter    string `db:"inter_writer"`
+	InterPerformer string `db:"inter_performer"`
+}
+
 // SplitString 分隔以','为分隔符的string数据
 func SplitString(data string) []string {
 	if len(data) == 0 {
 		return []string{}
 	}
 	return strings.Split(data, ",")
-}
-
-type User struct {
 }

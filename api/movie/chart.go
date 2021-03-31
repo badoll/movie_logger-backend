@@ -38,7 +38,7 @@ func GetMovieListByChart(c *gin.Context) {
 	}
 	respList := make([]Movie, len(movieList))
 	for i, v := range movieList {
-		respList[i] = transMovie(v)
+		respList[i] = TransMovie(v)
 	}
 	resp := movieListResp{
 		Total:     len(movieList),

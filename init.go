@@ -35,4 +35,5 @@ func initRouter(router *gin.Engine) {
 
 func initServer() {
 	db.Init()
+	user.CalInit()
 }
