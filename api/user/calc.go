@@ -90,13 +90,25 @@ func CalUserInter(userList []int64) {
 			for _, v := range m.Cate {
 				calFactor("inter_field", v, rfMap)
 			}
-			for _, v := range m.Director {
+			d := m.Director
+			if len(d) > 1 {
+				d = d[:1]
+			}
+			for _, v := range d {
 				calFactor("inter_director", v, rfMap)
 			}
-			for _, v := range m.Writer {
+			w := m.Writer
+			if len(w) > 1 {
+				w = w[:1]
+			}
+			for _, v := range w {
 				calFactor("inter_writer", v, rfMap)
 			}
-			for _, v := range m.Performer {
+			p := m.Performer
+			if len(p) > 3 {
+				p = p[:3] //防止推荐重复的脏数据
+			}
+			for _, v := range p {
 				calFactor("inter_performer", v, rfMap)
 			}
 		}
