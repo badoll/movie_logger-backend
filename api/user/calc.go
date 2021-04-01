@@ -14,7 +14,9 @@ import (
 
 const (
 	// 用户喜欢的电影列表中某一个tag出现的次数占比超过该比率则加入用户感兴趣的tag
-	RATE2RECOMMEND float32 = 0.35
+	RATE2RECOMMEND float32 = 0.2
+	// 用户喜欢的电影数目不小于该值才计算更新用户兴趣
+	MINLIKEMOVIE int = 3
 )
 
 var c = &calBot{userList: map[int64]struct{}{}}
@@ -33,27 +35,30 @@ func CalInit() {
 
 type calBot struct {
 	userList map[int64]struct{}
-	mu       sync.RWMutex
+	mu       sync.Mutex
 }
 
 func AddCalUser(userID int64) {
 	c.mu.Lock()
 	c.userList[userID] = struct{}{}
 	c.mu.Unlock()
+	logger.GetLogger("cal").Debugf("add cal user %d", userID)
 }
 
 func (c *calBot) Cal() {
-	c.mu.RLock()
+	c.mu.Lock()
 	userList := make([]int64, len(c.userList))
 	i := 0
 	for k := range c.userList {
 		userList[i] = k
 		i++
 	}
-	c.mu.RUnlock()
-	logger.GetLogger("cal").WithFields(logrus.Fields{"api": "Cal"}).Debug("start to cal")
+	// copy后清空近段时间点赞了电影的用户
+	c.userList = make(map[int64]struct{})
+	c.mu.Unlock()
+	logger.GetLogger("cal").Debugf("start to cal user(%+v)", userList)
 	CalUserInter(userList)
-	logger.GetLogger("cal").WithFields(logrus.Fields{"api": "Cal"}).Debug("done")
+	logger.GetLogger("cal").Debug("done")
 }
 
 // CalUserInter 通过用户喜欢的电影列表提取电影推荐因素中占比最大的几个值
@@ -67,7 +72,8 @@ func CalUserInter(userList []int64) {
 			logger.GetLogger("cal").WithFields(logrus.Fields{"api": "CalUserInter", "error": err}).Error()
 			return
 		}
-		if len(likeList) == 0 {
+		logger.GetLogger("cal").Debugf("user(%d) like_movie: total: %d, like: %+v", userID, len(likeList), likeList)
+		if len(likeList) < MINLIKEMOVIE {
 			return
 		}
 		daoList, err := db.GetCli().SelectMovieDetailByMovieIDList(likeList)
@@ -130,6 +136,7 @@ func CalUserInter(userList []int64) {
 			InterWriter:    strings.Join(rf.Writer, ","),
 			InterPerformer: strings.Join(rf.Performer, ","),
 		}
+		logger.GetLogger("cal").Debugf("user(%d) inter: %+v, like_movie_inter: %+v, cal_inter: %+v", userID, userInter, rfMap, rf)
 		if err = db.GetCli().UpdateUserInter(userID, daoRF); err != nil {
 			logger.GetLogger("cal").WithFields(logrus.Fields{"api": "CalUserInter", "error": err}).Error()
 			return
@@ -161,6 +168,10 @@ func mergeInter(userInter []string, valMap map[string]int) []string {
 	}
 	return userInter
 }
+
+// todo 根据总数计算rate
+// func calRate2Recommand() {
+// }
 
 func calFactor(factor, val string, rfMap map[string]map[string]int) {
 	// When accessing a map key that doesn't exist yet, one receives a zero value.
