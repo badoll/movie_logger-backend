@@ -62,16 +62,20 @@ func (db *DB) GetMovieListByTitle(title string, limit, offset int) (mlist []Movi
 }
 
 // GetMovieListByChart 排行榜电影id联表查电影详情
+// 评分人数 > 评分 > 上映日期 > 上映年份 > id
 func (db *DB) GetMovieListByChart(chart string) (mlist []Movie, err error) {
-	sql := fmt.Sprintf("select "+movie_col+" from %s as c join movie as m on c.douban_id = m.douban_id", chart)
+	sql := fmt.Sprintf("select "+movie_col+" from %s as c join movie as m on c.douban_id = m.douban_id "+
+		"order by m.rating_num desc, m.rating_score desc, m.release_date desc, m.release_year desc, m.douban_id desc", chart)
 	err = db.Select(&mlist, sql)
 	return
 }
 
 // GetMovieListByChartWithPage 排行榜电影id联表查电影详情（分页）
+// 评分人数 > 评分 > 上映日期 > 上映年份 > id
 func (db *DB) GetMovieListByChartWithPage(chart string, limit, offset int) (mlist []Movie, err error) {
-	sql := fmt.Sprintf("select "+movie_col+" from %s as c join movie as m on c.douban_id = m.douban_id limit ? offset ?",
-		chart)
+	sql := fmt.Sprintf("select "+movie_col+" from %s as c join movie as m on c.douban_id = m.douban_id "+
+		"order by m.rating_num desc, m.rating_score desc, m.release_date desc, m.release_year desc, m.douban_id desc "+
+		"limit ? offset ?", chart)
 	err = db.Select(&mlist, sql, limit, offset)
 	return
 }
