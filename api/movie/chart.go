@@ -2,7 +2,6 @@ package movie
 
 import (
 	"net/http"
-	"sort"
 	"strconv"
 
 	"github.com/badoll/movie_logger-backend/api"
